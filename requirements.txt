@@ -1,0 +1,4 @@
+fastapi
+aiokafka
+uvicorn
+locust
