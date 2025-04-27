@@ -6,18 +6,18 @@ Designed to scale horizontally for **millions of users** and protect services wi
 ---
 
 ## 📜 Table of Contents
-- [Background](#background)
-- [Architecture](#architecture)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Running the Project](#running-the-project)
-- [Stress Testing](#stress-testing)
-- [How it Works](#how-it-works)
-- [CRDT Merge Logic](#crdt-merge-logic)
-- [Improvements and Future Work](#improvements-and-future-work)
-- [License](#license)
+- [Background](#-background)
+- [Architecture](#-architecture)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Running the Project](#-running-the-project)
+- [Stress Testing](#-stress-testing)
+- [How it Works](#-how-it-works-detailed)
+- [CRDT Merge Logic](#-crdt-merge-logic)
+- [Improvements and Future Work](#-improvements-and-future-work)
+- [License](#-license)
 
 ---
 
