@@ -10,9 +10,7 @@ Designed to scale horizontally for **millions of users** and protect services wi
 - [Architecture](#-architecture)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
-- [Running the Project](#-running-the-project)
 - [Stress Testing](#-stress-testing)
 - [How it Works](#-how-it-works-detailed)
 - [CRDT Merge Logic](#-crdt-merge-logic)
@@ -85,23 +83,6 @@ Local Decision                      Local Decision
 
 ---
 
-## 🗂 Project Structure
-
-```bash
-├── README.md
-├── docker-compose.yml
-├── service
-│   ├── app.py          # FastAPI server
-│   ├── limiter.py      # Token Bucket + CRDT logic
-│   ├── kafka_sync.py   # Kafka producer/consumer
-│   ├── models.py       # Data models
-├── stress_test
-│   ├── locustfile.py   # Stress testing users
-└── requirements.txt
-```
-
----
-
 ## 🚀 Getting Started
 
 ### 1. Clone the Repository
@@ -113,20 +94,11 @@ cd distributed-rate-limiter
 
 ---
 
-### 2. Install Dependencies
+### 2. Install Docker
 
-Create a virtual environment (optional but recommended):
+- Easiest way to proceed is by downloading [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/) straight away (recommended).
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Install all Python packages:
-
-```bash
-pip install -r requirements.txt
-```
+- You can install **Docker Engine** separately but that's up yo you.
 
 ---
 
@@ -137,7 +109,7 @@ We are using **Bitnami's lightweight Kafka** (no Zookeeper).
 Start the cluster:
 
 ```bash
-docker-compose up -d
+docker-compose up -d kafka
 ```
 
 This spins up:
@@ -151,35 +123,10 @@ This spins up:
 Run the FastAPI server:
 
 ```bash
-uvicorn service.app:app --host 0.0.0.0 --port 8000 --reload
+docker compose up -d rate_limiter
 ```
 
-Your API is now running at:
-
-👉 http://localhost:8000/protected
-
----
-
-## 🏎 Running the Project
-
-Once everything is up:
-
-- Call `POST http://localhost:8000/protected`
-- Include a header:
-  ```
-  X-User-ID: <some-user-id>
-  ```
-- Server will:
-  - Identify the user
-  - Check their token bucket
-  - Allow or reject based on available tokens
-- If user exceeds allowed rate → returns **429 Too Many Requests**.
-
-Example:
-
-```bash
-curl -X POST http://localhost:8000/protected -H "X-User-ID: 1234"
-```
+It will deploy 5 replicas of your Rate Limiter API in a containerized environment.
 
 ---
 
@@ -187,32 +134,26 @@ curl -X POST http://localhost:8000/protected -H "X-User-ID: 1234"
 
 We use **Locust** to simulate heavy load!
 
-1. Install Locust:
+1. Run the Locust Master UI:
 
 ```bash
-pip install locust
+docker compose up -d master_locust
 ```
 
-2. Go to `stress_test/`:
+2. Run the Locust Workers:
 
 ```bash
-cd stress_test
+docker compose up -d worker_locust
 ```
 
-3. Run Locust:
-
-```bash
-locust -f locustfile.py --host=http://localhost:8000
-```
-
-4. Open browser:
+3. Open browser:
 
 👉 http://localhost:8089
 
-5. Configure:
+4. Configure:
 - Number of users: `10000`
 - Spawn rate: `500`
-- Host: `http://localhost:8000`
+- Host: `http://rate_limiter:8000`
 - Start!
 
 Locust will simulate **millions of users** hammering the `/protected` API.
@@ -281,16 +222,5 @@ This distributed rate limiter is designed for:
 - No single point of failure
 
 **Perfect for your final year project and beyond!**
-
----
-
-# 📌 Important Commands Summary
-
-| Action | Command |
-|:-------|:--------|
-| Start Kafka | `docker-compose up -d` |
-| Start API Server | `uvicorn service.app:app --host=0.0.0.0 --port=8000 --reload` |
-| Start Stress Test | `locust -f stress_test/locustfile.py --host=http://localhost:8000` |
-| Open Locust UI | `http://localhost:8089` |
 
 ---
