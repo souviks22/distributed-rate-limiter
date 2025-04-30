@@ -212,15 +212,3 @@ merged_last_refill = max(local.last_refill, incoming.last_refill)
 This project is open-sourced under the **MIT License**.
 
 ---
-
-# 🚀 Final Words
-
-This distributed rate limiter is designed for:
-- Massive scale
-- Fault-tolerance
-- Near real-time consistency
-- No single point of failure
-
-**Perfect for your final year project and beyond!**
-
----
