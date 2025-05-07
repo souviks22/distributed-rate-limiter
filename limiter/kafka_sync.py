@@ -18,7 +18,7 @@ class KafkaSync:
         self.capacity: int = capacity
         self.refill_rate: float = refill_rate
         self.producer: AIOKafkaProducer = AIOKafkaProducer(bootstrap_servers=brokers)
-        self.consumer: AIOKafkaConsumer = AIOKafkaConsumer(topic, bootstrap_servers=brokers, group_id='rate_limiter_group')
+        self.consumer: AIOKafkaConsumer = AIOKafkaConsumer(topic, bootstrap_servers=brokers, group_id=None)
         self.buckets: dict[str, CRDTBucket] = {}
 
     async def start(self) -> None:
@@ -51,6 +51,7 @@ class KafkaSync:
             'bucket': bucket.serialize(),
             'timestamp': time.time()
         }
+        logger.info('Published from this instance')
         await self.producer.send_and_wait(self.topic, json.dumps(message).encode())
 
     def get_bucket(self, user_id: str) -> TokenBucket:

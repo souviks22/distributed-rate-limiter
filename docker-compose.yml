@@ -26,6 +26,17 @@ services:
     deploy:
       replicas: 5
 
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - rate_limiter
+    networks:
+      - app-tier
+
   master_locust:
     image: locustio/locust
     networks:
