@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from limiter.kafka_sync import KafkaSync
 from limiter.limiter import DistributedRateLimiter
 
-kafka_sync = KafkaSync(os.getenv('KAFKA_BROKER'), topic='rate-limiter', capacity=10, refill_rate=1.0)
+kafka_sync = KafkaSync(os.getenv('KAFKA_BROKER'), topic='rate-limiter', capacity=15, refill_rate=1.5)
 rate_limiter = DistributedRateLimiter(kafka_sync)
 
 @asynccontextmanager
