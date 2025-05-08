@@ -1,16 +1,10 @@
 import asyncio
 import json
 import time
-import logging
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from limiter.crdt import CRDTBucket
 from limiter.bucket import TokenBucket
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
+from log.logger import logger
 
 class KafkaSync:
     def __init__(self, brokers: str, topic: str, capacity: int, refill_rate: float) -> None:
@@ -42,7 +36,7 @@ class KafkaSync:
             else:
                 self.buckets[user_id].merge(incoming_bucket)
             
-            logger.info('CRDT sync latency: %f ms', (time.time() - payload['timestamp']) * 1000)
+            # logger.info('CRDT sync latency: %f ms', (time.time() - payload['timestamp']) * 1000)
 
     async def publish_update(self, user_id: str) -> None:
         bucket = self.buckets[user_id]
@@ -51,7 +45,7 @@ class KafkaSync:
             'bucket': bucket.serialize(),
             'timestamp': time.time()
         }
-        logger.info('Published from this instance')
+        # logger.info('Published from this instance. Current Tokens: %f', bucket.bucket.tokens)
         await self.producer.send_and_wait(self.topic, json.dumps(message).encode())
 
     def get_bucket(self, user_id: str) -> TokenBucket:
