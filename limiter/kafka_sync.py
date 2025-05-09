@@ -14,11 +14,13 @@ class KafkaSync:
         self.producer: AIOKafkaProducer = AIOKafkaProducer(bootstrap_servers=brokers)
         self.consumer: AIOKafkaConsumer = AIOKafkaConsumer(topic, bootstrap_servers=brokers, group_id=None)
         self.buckets: dict[str, CRDTBucket] = {}
+        self.buffer: list[dict] = []
 
     async def start(self) -> None:
         await self.producer.start()
         await self.consumer.start()
         asyncio.create_task(self.consume_messages())
+        asyncio.create_task(self.publish_messages())
 
     async def stop(self) -> None:
         await self.producer.stop()
@@ -46,7 +48,16 @@ class KafkaSync:
             'timestamp': time.time()
         }
         # logger.info('Published from this instance. Current Tokens: %f', bucket.bucket.tokens)
-        await self.producer.send_and_wait(self.topic, json.dumps(message).encode())
+        self.buffer.append(message)
+
+    async def publish_messages(self) -> None:
+        while True:
+            for message in self.buffer:
+                await self.producer.send_and_wait(self.topic, json.dumps(message).encode())
+            self.buffer.clear()
+            # logger.info('Published after 200ms')
+            await asyncio.sleep(0.2) # 200 ms batch window
+            
 
     def get_bucket(self, user_id: str) -> TokenBucket:
         if user_id not in self.buckets:
