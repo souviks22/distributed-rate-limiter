@@ -7,6 +7,6 @@ class RateLimiterUser(HttpUser):
 
     @task
     def protected_endpoint(self) -> None:
-        user_id = str(random.randint(1, 10_000))
+        user_id = str(random.randint(1, 100_000))
         headers = {'X-User-Id': user_id}
         self.client.get('/protected', headers=headers)

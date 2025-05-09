@@ -4,6 +4,7 @@ import time
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from limiter.crdt import CRDTBucket
 from limiter.bucket import TokenBucket
+from metrics.sync_latency import sync_latency
 from log.logger import logger
 
 class KafkaSync:
@@ -37,15 +38,13 @@ class KafkaSync:
                 self.buckets[user_id] = incoming_bucket
             else:
                 self.buckets[user_id].merge(incoming_bucket)
-            
-            # logger.info('CRDT sync latency: %f ms', (time.time() - payload['timestamp']) * 1000)
+            sync_latency.add_latency(time.time() - payload['timestamp'])
 
     async def publish_update(self, user_id: str) -> None:
         bucket = self.buckets[user_id]
         message: dict = {
             'user_id': user_id,
-            'bucket': bucket.serialize(),
-            'timestamp': time.time()
+            'bucket': bucket.serialize()
         }
         # logger.info('Published from this instance. Current Tokens: %f', bucket.bucket.tokens)
         self.buffer.append(message)
@@ -53,6 +52,7 @@ class KafkaSync:
     async def publish_messages(self) -> None:
         while True:
             for message in self.buffer:
+                message['timestamp'] = time.time()
                 await self.producer.send_and_wait(self.topic, json.dumps(message).encode())
             self.buffer.clear()
             # logger.info('Published after 200ms')

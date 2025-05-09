@@ -1,9 +1,11 @@
 import os
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from limiter.kafka_sync import KafkaSync
 from limiter.limiter import DistributedRateLimiter
+from metrics.sync_latency import sync_latency
+from log.logger import logger
 
 kafka_sync = KafkaSync(os.getenv('KAFKA_BROKER'), topic='rate-limiter', capacity=10, refill_rate=1.0)
 rate_limiter = DistributedRateLimiter(kafka_sync)
@@ -13,6 +15,7 @@ async def lifespan(app: FastAPI):
     await rate_limiter.start()
     yield
     await rate_limiter.stop()
+    logger.info('CRDT average sync latency: %f ms', sync_latency.get_latency() * 1000)
 
 app = FastAPI(lifespan=lifespan)
 

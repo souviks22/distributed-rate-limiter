@@ -26,6 +26,5 @@ class TokenBucket:
         return False
 
     def merge(self, other: 'TokenBucket') -> None:
-        """Merge with another bucket (CRDT merge)."""
         self.tokens = max(self.tokens, other.tokens)
         self.last_refill = max(self.last_refill, other.last_refill)
