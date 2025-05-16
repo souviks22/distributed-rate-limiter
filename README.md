@@ -109,7 +109,7 @@ We are using **Bitnami's lightweight Kafka** (no Zookeeper).
 Start the cluster:
 
 ```bash
-docker-compose up -d kafka
+docker compose up -d kafka
 ```
 
 This spins up:
@@ -120,13 +120,21 @@ This spins up:
 
 ### 4. Start the Rate Limiter Service
 
-Run the FastAPI server:
+1. Run the FastAPI servers:
 
 ```bash
 docker compose up -d rate_limiter
 ```
 
 It will deploy 5 replicas of your Rate Limiter API in a containerized environment.
+
+2. Run the NGINX load balancer:
+
+```bash
+docker compose up -d nginx
+```
+
+It will enable a load balancer sending requests to replicas in round-robin nature.
 
 ---
 
@@ -153,7 +161,7 @@ docker compose up -d worker_locust
 4. Configure:
 - Number of users: `10000`
 - Spawn rate: `500`
-- Host: `http://rate_limiter:8000`
+- Host: `http://nginx`
 - Start!
 
 Locust will simulate **millions of users** hammering the `/protected` API.
@@ -179,11 +187,11 @@ You will see **latency**, **success rate**, **failure rate**, etc.
 ## 🧠 CRDT Merge Logic
 
 **Merge two buckets** by:
-- Taking **minimum tokens left**.
+- Taking **maximum tokens used**.
 - Taking **maximum last refill timestamp**.
 
 ```python
-merged_tokens = min(local.tokens, incoming.tokens)
+merged_tokens = max(local.tokens, incoming.tokens)
 merged_last_refill = max(local.last_refill, incoming.last_refill)
 ```
 
