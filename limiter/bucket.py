@@ -1,30 +1,49 @@
 from datetime import datetime, timezone
-from log.logger import logger
 
-class TokenBucket:
+class CRDTBucket:
     def __init__(self, capacity: int, refill_rate: float) -> None:
-        self.capacity: int = capacity
-        self.refilled: float = capacity
-        self.tokens: float = 0
-        self.refill_rate: float = refill_rate  # tokens per second
-        self.last_refill: datetime = datetime.now(timezone.utc)
+        # maximum available tokens at any time
+        self.capacity = capacity
+        # tokens to be added per second
+        self.refill_rate = refill_rate
+        # g-counter for used tokens at real time
+        self.used_tokens = 0.0
+        # g-counter for usable tokens upper bound
+        self.usable_tokens = float(capacity)
+        # latest timestamp of refill
+        self.last_refill = datetime.now(tz=timezone.utc)
 
     def refill(self) -> None:
-        now: datetime = datetime.now(timezone.utc)
-        elapsed: float = (now - self.last_refill).total_seconds()
-        added_tokens: float = elapsed * self.refill_rate
-        self.refilled += added_tokens
-        self.refilled = min(self.tokens + self.capacity, self.refilled)
+        now = datetime.now(tz=timezone.utc)
+        elapsed_time = (now - self.last_refill).total_seconds()
+        elapsed_tokens = elapsed_time * self.refill_rate
+        self.usable_tokens += elapsed_tokens
+        self.usable_tokens = min(self.used_tokens + self.capacity, self.usable_tokens)
         self.last_refill = now
 
-    def consume(self, tokens: int = 1) -> bool:
+    def consume(self) -> bool:
         self.refill()
-        # logger.info('Refilled: %f, Tokens: %f', self.refilled, self.tokens)
-        if self.refilled - self.tokens >= tokens:
-            self.tokens += tokens
+        if self.usable_tokens - self.used_tokens >= 1:
+            self.used_tokens += 1
             return True
         return False
-
-    def merge(self, other: 'TokenBucket') -> None:
-        self.tokens = max(self.tokens, other.tokens)
+    
+    def merge(self, other: 'CRDTBucket') -> None:
+        self.used_tokens = max(self.used_tokens, other.used_tokens)
+        self.usable_tokens = max(self.usable_tokens, other.usable_tokens)
         self.last_refill = max(self.last_refill, other.last_refill)
+
+    def serialize(self) -> dict[str, float]:
+        return {
+            'used_tokens': self.used_tokens,
+            'usable_tokens': self.usable_tokens,
+            'timestamp': self.last_refill.timestamp()
+        }
+
+    @staticmethod
+    def deserialize(data: dict[str, float], capacity: int, refill_rate: float) -> 'CRDTBucket':
+        bucket = CRDTBucket(capacity, refill_rate)
+        bucket.used_tokens = data['used_tokens']
+        bucket.usable_tokens = data['usable_tokens']
+        bucket.last_refill = datetime.fromtimestamp(data['timestamp'], tz=timezone.utc)
+        return bucket

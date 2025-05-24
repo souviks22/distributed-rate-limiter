@@ -1,4 +1,6 @@
+aiokafka[lz4]
 fastapi
-aiokafka
-uvicorn
 locust
+redis
+uuid
+uvicorn
